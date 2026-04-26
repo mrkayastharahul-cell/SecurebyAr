@@ -1,8 +1,17 @@
 (function () {
-  if (window.__FILTER__) return;
-  window.__FILTER__ = true;
+  "use strict";
 
+  if (window.__AR_FINAL__) return;
+  window.__AR_FINAL__ = true;
+
+  // ===== STATE =====
   let running = false;
+
+  const STATE = {
+    matches: 0,
+    clicks: 0,
+    speed: 500
+  };
 
   // ===== UI =====
   const box = document.createElement("div");
@@ -10,146 +19,237 @@
     position:fixed;
     bottom:20px;
     right:20px;
-    width:220px;
-    background:#111;
-    color:#fff;
-    padding:12px;
-    border-radius:12px;
+    width:250px;
+    background:#f3f4f6;
+    color:#111;
+    padding:14px;
+    border-radius:14px;
     z-index:999999;
     font-family:sans-serif;
-    box-shadow:0 0 10px rgba(0,0,0,0.5);
+    box-shadow:0 8px 20px rgba(0,0,0,0.25);
+    cursor:move;
   `;
 
   box.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-      <span style="font-weight:bold;">Auto Buy</span>
+    <div id="dragHandle" style="display:flex;justify-content:space-between;margin-bottom:8px;">
+      <span style="font-weight:600;">AR Wallet PRO</span>
       <span id="light" style="width:10px;height:10px;border-radius:50%;background:red;"></span>
     </div>
 
-    <div style="font-size:13px;margin-bottom:8px;">Target: ₹1000</div>
+    <input id="amount" value="1000" style="width:100%;padding:8px;border-radius:8px;margin-bottom:8px;" />
 
-    <button id="start" style="width:100%;padding:6px;background:green;color:#fff;border:none;border-radius:6px;margin-bottom:6px;cursor:pointer;">Start</button>
+    <select id="speed" style="width:100%;margin-bottom:8px;">
+      <option value="200">⚡ Fast</option>
+      <option value="500" selected>⚖️ Normal</option>
+      <option value="1000">🐢 Slow</option>
+    </select>
 
-    <button id="stop" style="width:100%;padding:6px;background:red;color:#fff;border:none;border-radius:6px;cursor:pointer;">Stop</button>
+    <div style="display:flex;justify-content:space-between;font-size:12px;">
+      <span>Matches: <b id="m">0</b></span>
+      <span>Clicks: <b id="c">0</b></span>
+    </div>
 
-    <div id="status" style="margin-top:6px;font-size:12px;">Idle</div>
+    <div style="display:flex;gap:8px;margin-top:8px;">
+      <button id="start" style="flex:1;background:#22c55e;color:#fff;">Start</button>
+      <button id="stop" style="flex:1;background:#ef4444;color:#fff;">Stop</button>
+    </div>
+
+    <div id="status" style="text-align:center;margin-top:6px;font-size:12px;">Idle</div>
   `;
 
   document.body.appendChild(box);
 
   const status = document.getElementById("status");
   const light = document.getElementById("light");
+  const amountInput = document.getElementById("amount");
+  const speedSelect = document.getElementById("speed");
 
+  const mEl = document.getElementById("m");
+  const cEl = document.getElementById("c");
+
+  // ===== STATUS =====
+  function setStatus(type, text) {
+    status.innerText = text;
+
+    const colors = {
+      idle: "gray",
+      running: "lime",
+      searching: "orange",
+      found: "blue",
+      success: "green",
+      failed: "red"
+    };
+
+    light.style.background = colors[type] || "gray";
+  }
+
+  function updateMatches(n) {
+    STATE.matches = n;
+    mEl.innerText = n;
+  }
+
+  function addClick() {
+    STATE.clicks++;
+    cEl.innerText = STATE.clicks;
+  }
+
+  speedSelect.onchange = () => {
+    STATE.speed = parseInt(speedSelect.value);
+  };
+
+  // ===== HELPERS =====
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+  function getClean(el) {
+    return el.innerText.replace(/[^0-9]/g, "").replace(/^0+/, "");
+  }
+
+  function isPaymentPage() {
+    return document.body.innerText.includes("Select Payment Method");
+  }
+
+  function clickMobiKwik() {
+    let tries = 0;
+
+    const interval = setInterval(() => {
+      const el = document.querySelector(".bgmobikwik");
+
+      if (el) {
+        el.click();
+        setStatus("success", "Payment Selected");
+        clearInterval(interval);
+      }
+
+      if (++tries > 10) {
+        setStatus("failed", "Payment Failed");
+        clearInterval(interval);
+      }
+    }, 300);
+  }
+
+  function clickLarge() {
+    const el = [...document.querySelectorAll("*")]
+      .find(e => e.innerText?.toLowerCase().includes("large"));
+
+    if (el) el.click();
+  }
+
+  function clickDefault() {
+    const el = [...document.querySelectorAll("*")]
+      .find(e => e.innerText?.toLowerCase().trim() === "default");
+
+    if (el) el.click();
+  }
+
+  // ===== CORE LOOP =====
+  async function loop() {
+    while (running) {
+
+      // STEP 1: ensure LARGE selected
+      clickLarge();
+
+      const val = amountInput.value.trim();
+
+      // STEP 2: scan rows
+      let all = [...document.querySelectorAll(".ml10")];
+      let matches = all.filter(el => getClean(el) === val);
+
+      updateMatches(matches.length);
+
+      if (!matches.length) {
+        setStatus("searching", "No Match");
+        clickDefault();
+        await sleep(STATE.speed);
+        continue;
+      }
+
+      setStatus("found", "Match Found");
+
+      // STEP 3: click buy
+      for (let el of matches.slice(0, 3)) {
+
+        const row = el.closest(".x-row");
+        const btn = row?.querySelector("button");
+
+        if (!btn) continue;
+
+        btn.click();
+        addClick();
+
+        await sleep(500);
+
+        // STEP 4: wait for payment
+        let success = false;
+
+        for (let i = 0; i < 10; i++) {
+          if (isPaymentPage()) {
+            success = true;
+            break;
+          }
+          await sleep(200);
+        }
+
+        if (!success) {
+          setStatus("failed", "Retrying...");
+          continue;
+        }
+
+        // STEP 5: SUCCESS FLOW
+        setStatus("success", "Payment Page");
+
+        setTimeout(() => {
+          clickMobiKwik();
+        }, 800);
+
+        running = false;
+        return;
+      }
+
+      await sleep(STATE.speed);
+    }
+  }
+
+  // ===== BUTTONS =====
   document.getElementById("start").onclick = () => {
     running = true;
-    status.innerText = "Running";
-    light.style.background = "lime";
+
+    STATE.matches = 0;
+    STATE.clicks = 0;
+    updateMatches(0);
+    cEl.innerText = 0;
+
+    setStatus("running", "Running");
     loop();
   };
 
   document.getElementById("stop").onclick = () => {
     running = false;
-    status.innerText = "Stopped";
-    light.style.background = "red";
+    setStatus("idle", "Stopped");
   };
 
-  function beep() {
-    new Audio("https://actions.google.com/sounds/v1/alarms/beep_short.ogg").play();
-  }
+  // ===== DRAG =====
+  let isDragging = false, offsetX, offsetY;
 
-  function clickOtpUpi() {
-    document.querySelectorAll(".tab-title").forEach(t => {
-      if (t.innerText.includes("OTP-UPI")) t.click();
-    });
-  }
+  document.getElementById("dragHandle").onmousedown = (e) => {
+    isDragging = true;
+    const rect = box.getBoundingClientRect();
 
-  function clickLarge() {
-    document.querySelectorAll(".txt").forEach(el => {
-      if (el.innerText.trim() === "Large") el.click();
-    });
-  }
+    box.style.left = rect.left + "px";
+    box.style.top = rect.top + "px";
+    box.style.right = "auto";
+    box.style.bottom = "auto";
 
-  // ===== STRICT ₹1000 MATCH =====
-  function findTargets() {
-    return Array.from(document.querySelectorAll(".ml10"))
-      .filter(el => {
-        const text = el.innerText.replace(/\s+/g, '');
-        return /₹1000(?!\d)/.test(text);
-      });
-  }
+    offsetX = e.clientX - box.offsetLeft;
+    offsetY = e.clientY - box.offsetTop;
+  };
 
-  function highlight(el) {
-    el.style.outline = "3px solid red";
-    el.style.background = "rgba(255,0,0,0.2)";
-  }
-
-  function findBuyText(startEl) {
-    let current = startEl;
-
-    while (current && current !== document.body) {
-      let btn = current.querySelector(".van-button__text");
-      if (btn && btn.innerText.trim() === "Buy") {
-        return btn;
-      }
-      current = current.parentElement;
+  document.onmousemove = (e) => {
+    if (isDragging) {
+      box.style.left = (e.clientX - offsetX) + "px";
+      box.style.top = (e.clientY - offsetY) + "px";
     }
+  };
 
-    return null;
-  }
-
-  async function clickTargets(targets) {
-    if (targets.length === 0) return false;
-
-    for (let t of targets) {
-      highlight(t);
-
-      let buyText = findBuyText(t);
-
-      if (buyText) {
-        buyText.click();
-
-        if (document.body.innerText.includes("Select Payment Method")) {
-          beep();
-          running = false;
-          status.innerText = "Stopped (Payment Page)";
-          light.style.background = "red";
-          return true;
-        }
-      }
-    }
-
-    return false;
-  }
-
-  async function loop() {
-    while (running) {
-
-      if (document.body.innerText.includes("Select Payment Method")) {
-        beep();
-        running = false;
-        status.innerText = "Stopped (Payment Page)";
-        light.style.background = "red";
-        return;
-      }
-
-      clickOtpUpi();
-      clickLarge();
-
-      await sleep(200);
-
-      let targets = findTargets();
-
-      if (targets.length > 0) {
-        let success = await clickTargets(targets);
-        if (success) return;
-      }
-
-      await sleep(200);
-    }
-  }
-
-  function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-  }
+  document.onmouseup = () => isDragging = false;
 
 })();
