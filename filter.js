@@ -4,57 +4,42 @@
   if (window.__AR_FINAL__) return;
   window.__AR_FINAL__ = true;
 
-  // ===== STATE =====
   let running = false;
 
   const STATE = {
+    speed: 250,
     matches: 0,
-    clicks: 0,
-    speed: 500
+    clicks: 0
   };
 
   // ===== UI =====
   const box = document.createElement("div");
   box.style = `
-    position:fixed;
-    bottom:20px;
-    right:20px;
-    width:250px;
-    background:#f3f4f6;
-    color:#111;
-    padding:14px;
-    border-radius:14px;
-    z-index:999999;
-    font-family:sans-serif;
+    position:fixed;bottom:20px;right:20px;width:260px;
+    background:#f3f4f6;padding:14px;border-radius:14px;
+    z-index:999999;font-family:sans-serif;
     box-shadow:0 8px 20px rgba(0,0,0,0.25);
-    cursor:move;
   `;
 
   box.innerHTML = `
-    <div id="dragHandle" style="display:flex;justify-content:space-between;margin-bottom:8px;">
-      <span style="font-weight:600;">AR Wallet PRO</span>
+    <div id="dragHandle" style="display:flex;justify-content:space-between;cursor:move;">
+      <b>AR Wallet FINAL</b>
       <span id="light" style="width:10px;height:10px;border-radius:50%;background:red;"></span>
     </div>
 
-    <input id="amount" value="1000" style="width:100%;padding:8px;border-radius:8px;margin-bottom:8px;" />
+    <input id="amount" value="1000" style="width:100%;margin-top:8px;padding:6px;border-radius:6px;" />
 
-    <select id="speed" style="width:100%;margin-bottom:8px;">
-      <option value="200">⚡ Fast</option>
-      <option value="500" selected>⚖️ Normal</option>
-      <option value="1000">🐢 Slow</option>
-    </select>
-
-    <div style="display:flex;justify-content:space-between;font-size:12px;">
-      <span>Matches: <b id="m">0</b></span>
-      <span>Clicks: <b id="c">0</b></span>
+    <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:6px;">
+      <span>M: <b id="m">0</b></span>
+      <span>C: <b id="c">0</b></span>
     </div>
 
-    <div style="display:flex;gap:8px;margin-top:8px;">
-      <button id="start" style="flex:1;background:#22c55e;color:#fff;">Start</button>
-      <button id="stop" style="flex:1;background:#ef4444;color:#fff;">Stop</button>
+    <div style="display:flex;gap:6px;margin-top:8px;">
+      <button id="start" style="flex:1;background:#22c55e;color:#fff;border:none;padding:6px;border-radius:6px;">Start</button>
+      <button id="stop" style="flex:1;background:#ef4444;color:#fff;border:none;padding:6px;border-radius:6px;">Stop</button>
     </div>
 
-    <div id="status" style="text-align:center;margin-top:6px;font-size:12px;">Idle</div>
+    <div id="status" style="text-align:center;font-size:12px;margin-top:6px;">Idle</div>
   `;
 
   document.body.appendChild(box);
@@ -62,163 +47,158 @@
   const status = document.getElementById("status");
   const light = document.getElementById("light");
   const amountInput = document.getElementById("amount");
-  const speedSelect = document.getElementById("speed");
-
   const mEl = document.getElementById("m");
   const cEl = document.getElementById("c");
 
-  // ===== STATUS =====
-  function setStatus(type, text) {
-    status.innerText = text;
+  function setStatus(type, txt) {
+    status.innerText = txt;
 
     const colors = {
       idle: "gray",
-      running: "lime",
-      searching: "orange",
+      run: "lime",
       found: "blue",
-      success: "green",
-      failed: "red"
+      fail: "orange",
+      success: "green"
     };
 
     light.style.background = colors[type] || "gray";
   }
 
-  function updateMatches(n) {
-    STATE.matches = n;
-    mEl.innerText = n;
+  // ===== SOUND =====
+  let ctx;
+
+  function unlockAudio() {
+    if (!ctx) ctx = new (window.AudioContext || window.webkitAudioContext)();
   }
 
-  function addClick() {
-    STATE.clicks++;
-    cEl.innerText = STATE.clicks;
+  function playPop() {
+    if (!ctx) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.value = 1200;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
+    setTimeout(() => o.stop(), 300);
   }
 
-  speedSelect.onchange = () => {
-    STATE.speed = parseInt(speedSelect.value);
-  };
+  function playChime() {
+    if (!ctx) return;
+    const o = ctx.createOscillator();
+    const g = ctx.createGain();
+    o.frequency.value = 800;
+    o.connect(g); g.connect(ctx.destination);
+    o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
+    setTimeout(() => o.stop(), 600);
+  }
 
   // ===== HELPERS =====
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  function getClean(el) {
+  function clean(el) {
     return el.innerText.replace(/[^0-9]/g, "").replace(/^0+/, "");
-  }
-
-  function isPaymentPage() {
-    return document.body.innerText.includes("Select Payment Method");
-  }
-
-  function clickMobiKwik() {
-    let tries = 0;
-
-    const interval = setInterval(() => {
-      const el = document.querySelector(".bgmobikwik");
-
-      if (el) {
-        el.click();
-        setStatus("success", "Payment Selected");
-        clearInterval(interval);
-      }
-
-      if (++tries > 10) {
-        setStatus("failed", "Payment Failed");
-        clearInterval(interval);
-      }
-    }, 300);
   }
 
   function clickLarge() {
     const el = [...document.querySelectorAll("*")]
-      .find(e => e.innerText?.toLowerCase().includes("large"));
-
+      .find(e => e.innerText === "Large");
     if (el) el.click();
   }
 
-  function clickDefault() {
-    const el = [...document.querySelectorAll("*")]
-      .find(e => e.innerText?.toLowerCase().trim() === "default");
+  function isPaymentPage() {
+    return document.body.innerText.includes("Select Method Payment");
+  }
 
-    if (el) el.click();
+  function clickMobiKwik() {
+    const el = document.querySelector(".bgmobikwik");
+    if (el) {
+      el.click();
+      return true;
+    }
+    return false;
+  }
+
+  function highlight(rows) {
+    document.querySelectorAll(".x-row").forEach(r => r.style.background = "");
+    rows.forEach(el => {
+      const row = el.closest(".x-row");
+      if (row) row.style.background = "yellow";
+    });
   }
 
   // ===== CORE LOOP =====
   async function loop() {
     while (running) {
 
-      // STEP 1: ensure LARGE selected
+      // STEP 1: Always click Large
       clickLarge();
 
       const val = amountInput.value.trim();
+      const all = [...document.querySelectorAll(".ml10")];
 
-      // STEP 2: scan rows
-      let all = [...document.querySelectorAll(".ml10")];
-      let matches = all.filter(el => getClean(el) === val);
+      const matches = all.filter(el => clean(el) === val);
 
-      updateMatches(matches.length);
+      STATE.matches = matches.length;
+      mEl.innerText = matches.length;
 
+      // STEP 2: NO MATCH → just wait → restart loop
       if (!matches.length) {
-        setStatus("searching", "No Match");
-        clickDefault();
+        setStatus("fail", "No Match");
         await sleep(STATE.speed);
         continue;
       }
 
+      // STEP 3: MATCH FOUND
       setStatus("found", "Match Found");
+      highlight(matches);
 
-      // STEP 3: click buy
-      for (let el of matches.slice(0, 3)) {
+      // STEP 4: CLICK TOP 5
+      for (let el of matches.slice(0, 5)) {
 
-        const row = el.closest(".x-row");
-        const btn = row?.querySelector("button");
-
+        const btn = el.closest(".x-row")?.querySelector("button");
         if (!btn) continue;
 
         btn.click();
-        addClick();
 
-        await sleep(500);
+        STATE.clicks++;
+        cEl.innerText = STATE.clicks;
 
-        // STEP 4: wait for payment
-        let success = false;
+        await sleep(200);
 
-        for (let i = 0; i < 10; i++) {
-          if (isPaymentPage()) {
-            success = true;
-            break;
-          }
-          await sleep(200);
+        // STEP 5: CHECK PAYMENT
+        if (isPaymentPage()) {
+
+          playPop();
+
+          setTimeout(() => {
+            if (clickMobiKwik()) {
+              playChime();
+            }
+          }, 500);
+
+          setStatus("success", "Completed");
+          running = false;
+          return;
         }
-
-        if (!success) {
-          setStatus("failed", "Retrying...");
-          continue;
-        }
-
-        // STEP 5: SUCCESS FLOW
-        setStatus("success", "Payment Page");
-
-        setTimeout(() => {
-          clickMobiKwik();
-        }, 800);
-
-        running = false;
-        return;
       }
 
       await sleep(STATE.speed);
     }
   }
 
-  // ===== BUTTONS =====
+  // ===== CONTROLS =====
   document.getElementById("start").onclick = () => {
-    running = true;
+    unlockAudio();
 
+    running = true;
     STATE.matches = 0;
     STATE.clicks = 0;
-    updateMatches(0);
+
+    mEl.innerText = 0;
     cEl.innerText = 0;
 
-    setStatus("running", "Running");
+    setStatus("run", "Running");
     loop();
   };
 
