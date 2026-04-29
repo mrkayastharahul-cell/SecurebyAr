@@ -185,7 +185,7 @@
 
 } else {
   // ❌ NO MATCH → slower loop (your requirement)
-  await sleep(500);
+  await sleep(300);
   continue;
       }
     }
