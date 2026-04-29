@@ -60,14 +60,14 @@
     o.connect(g); g.connect(ctx.destination);
     o.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.3);
-    setTimeout(() => o.stop(), 500);
+    setTimeout(() => o.stop(), 300);
   }
 
   function chime() {
     if (!ctx) return;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
-    o.frequency.value = 1200;
+    o.frequency.value = 800;
     o.connect(g); g.connect(ctx.destination);
     o.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
@@ -131,7 +131,7 @@
         status.innerText = "MobiKwik Failed";
         clearInterval(interval);
       }
-    }, 800);
+    }, 300);
   }
 
   // ===== CLICK TARGETS =====
@@ -144,7 +144,7 @@
       if (!buyText) continue;
 
       buyText.click();
-      await sleep(300);
+      await sleep(200);
 
       // 🔥 CHECK PAYMENT AFTER EACH CLICK
       if (isPaymentPage()) {
@@ -153,7 +153,7 @@
 
         setTimeout(() => {
           clickMobiKwikWithRetry();
-        }, 300);
+        }, 500);
 
         running = false;
         status.innerText = "Done (Payment)";
@@ -172,7 +172,7 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(500);
+      await sleep(200);
 
       let targets = findTargets();
 
@@ -184,7 +184,7 @@
         continue;
       }
 
-      await sleep(800);
+      await sleep(200);
     }
   }
 
