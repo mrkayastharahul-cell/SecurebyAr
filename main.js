@@ -188,9 +188,6 @@
   await sleep(500);
   continue;
       }
-
-      await sleep(200);
     }
-  }
 
 })();
