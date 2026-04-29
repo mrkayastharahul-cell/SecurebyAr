@@ -177,14 +177,19 @@
       let targets = findTargets();
 
       if (targets.length > 0) {
-        let success = await clickTargets(targets);
-        if (success) return;
-      } else {
-        // 🔁 NO MATCH → restart immediately
-        continue;
+  let success = await clickTargets(targets);
+  if (success) return;
+
+  // ✅ MATCH FOUND → fast loop
+  await sleep(200);
+
+} else {
+  // ❌ NO MATCH → slower loop (your requirement)
+  await sleep(500);
+  continue;
       }
 
-      await sleep(800);
+      await sleep(200);
     }
   }
 
