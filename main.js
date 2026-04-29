@@ -172,7 +172,7 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(500);
+      await sleep(800);
 
       let targets = findTargets();
 
@@ -184,7 +184,7 @@
         continue;
       }
 
-      await sleep(500);
+      await sleep(800);
     }
   }
 
