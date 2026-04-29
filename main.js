@@ -153,7 +153,7 @@
 
         setTimeout(() => {
           clickMobiKwikWithRetry();
-        }, 500);
+        }, 300);
 
         running = false;
         status.innerText = "Done (Payment)";
@@ -172,7 +172,7 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(800);
+      await sleep(600);
 
       let targets = findTargets();
 
