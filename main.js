@@ -82,6 +82,12 @@
            document.body.innerText.includes("Select Payment Method");
   }
 
+  function clickOtpUpi() {
+    document.querySelectorAll(".tab-title").forEach(t => {
+      if (t.innerText.includes("OTP-UPI")) t.click();
+    });
+  }
+
   function clickLarge() {
     document.querySelectorAll(".txt").forEach(el => {
       if (el.innerText.trim() === "Large") el.click();
@@ -163,6 +169,7 @@
   async function loop() {
     while (running) {
 
+      clickOtpUpi();
       clickLarge();
 
       await sleep(800);
