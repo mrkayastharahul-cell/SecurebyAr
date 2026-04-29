@@ -144,7 +144,7 @@
       if (!buyText) continue;
 
       buyText.click();
-      await sleep(500);
+      await sleep(300);
 
       // 🔥 CHECK PAYMENT AFTER EACH CLICK
       if (isPaymentPage()) {
@@ -172,7 +172,7 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(800);
+      await sleep(500);
 
       let targets = findTargets();
 
