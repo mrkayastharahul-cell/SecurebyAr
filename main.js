@@ -133,6 +133,18 @@
     }, 300);
   }
 
+  async function handleSuccess() {
+    pop();
+
+    setTimeout(() => {
+      clickMobiKwikWithRetry();
+    }, 500);
+
+    running = false;
+    status.innerText = "Done (Payment)";
+    light.style.background = "red";
+  }
+
   async function clickTargets(targets) {
     for (let t of targets.slice(0, 5)) {
 
@@ -142,19 +154,18 @@
       if (!buyText) continue;
 
       buyText.click();
+
+      // ⚡ instant check
+      if (isPaymentPage()) {
+        await handleSuccess();
+        return true;
+      }
+
+      // fallback check
       await sleep(200);
 
       if (isPaymentPage()) {
-
-        pop();
-
-        setTimeout(() => {
-          clickMobiKwikWithRetry();
-        }, 500);
-
-        running = false;
-        status.innerText = "Done (Payment)";
-        light.style.background = "red";
+        await handleSuccess();
         return true;
       }
     }
@@ -168,7 +179,7 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(200); // initial UI settle
+      await sleep(200);
 
       let targets = findTargets();
 
@@ -181,7 +192,7 @@
 
       } else {
         // ❌ SLOW LOOP
-        await sleep(300);
+        await sleep(500);
         continue;
       }
     }
