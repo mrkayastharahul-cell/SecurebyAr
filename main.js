@@ -114,7 +114,6 @@
     return null;
   }
 
-  // ===== STRONG MOBIKWIK CLICK (RETRY) =====
   function clickMobiKwikWithRetry() {
     let tries = 0;
 
@@ -134,7 +133,6 @@
     }, 300);
   }
 
-  // ===== CLICK TARGETS =====
   async function clickTargets(targets) {
     for (let t of targets.slice(0, 5)) {
 
@@ -146,14 +144,13 @@
       buyText.click();
       await sleep(200);
 
-      // 🔥 CHECK PAYMENT AFTER EACH CLICK
       if (isPaymentPage()) {
 
         pop();
 
         setTimeout(() => {
           clickMobiKwikWithRetry();
-        }, 300);
+        }, 500);
 
         running = false;
         status.innerText = "Done (Payment)";
@@ -161,7 +158,6 @@
         return true;
       }
     }
-
     return false;
   }
 
@@ -172,22 +168,23 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(600);
+      await sleep(200); // initial UI settle
 
       let targets = findTargets();
 
       if (targets.length > 0) {
-  let success = await clickTargets(targets);
-  if (success) return;
+        let success = await clickTargets(targets);
+        if (success) return;
 
-  // ✅ MATCH FOUND → fast loop
-  await sleep(200);
+        // ✅ FAST LOOP
+        await sleep(200);
 
-} else {
-  // ❌ NO MATCH → slower loop (your requirement)
-  await sleep(200);
-  continue;
+      } else {
+        // ❌ SLOW LOOP
+        await sleep(300);
+        continue;
       }
     }
+  }
 
 })();
