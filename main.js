@@ -131,7 +131,7 @@
         status.innerText = "MobiKwik Failed";
         clearInterval(interval);
       }
-    }, 300);
+    }, 500);
   }
 
   // ===== CLICK TARGETS =====
@@ -144,7 +144,7 @@
       if (!buyText) continue;
 
       buyText.click();
-      await sleep(200);
+      await sleep(400);
 
       // 🔥 CHECK PAYMENT AFTER EACH CLICK
       if (isPaymentPage()) {
@@ -172,7 +172,7 @@
       clickOtpUpi();
       clickLarge();
 
-      await sleep(200);
+      await sleep(400);
 
       let targets = findTargets();
 
@@ -184,7 +184,7 @@
         continue;
       }
 
-      await sleep(200);
+      await sleep(400);
     }
   }
 
