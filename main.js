@@ -67,7 +67,7 @@
     if (!ctx) return;
     const o = ctx.createOscillator();
     const g = ctx.createGain();
-    o.frequency.value = 800;
+    o.frequency.value = 1200;
     o.connect(g); g.connect(ctx.destination);
     o.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.6);
@@ -80,12 +80,6 @@
   function isPaymentPage() {
     return document.body.innerText.includes("Select Method Payment") ||
            document.body.innerText.includes("Select Payment Method");
-  }
-
-  function clickOtpUpi() {
-    document.querySelectorAll(".tab-title").forEach(t => {
-      if (t.innerText.includes("OTP-UPI")) t.click();
-    });
   }
 
   function clickLarge() {
@@ -131,7 +125,7 @@
         status.innerText = "MobiKwik Failed";
         clearInterval(interval);
       }
-    }, 600);
+    }, 800);
   }
 
   // ===== CLICK TARGETS =====
@@ -144,7 +138,7 @@
       if (!buyText) continue;
 
       buyText.click();
-      await sleep(600);
+      await sleep(500);
 
       // 🔥 CHECK PAYMENT AFTER EACH CLICK
       if (isPaymentPage()) {
@@ -153,7 +147,7 @@
 
         setTimeout(() => {
           clickMobiKwikWithRetry();
-        }, 600);
+        }, 300);
 
         running = false;
         status.innerText = "Done (Payment)";
@@ -169,10 +163,9 @@
   async function loop() {
     while (running) {
 
-      clickOtpUpi();
       clickLarge();
 
-      await sleep(600);
+      await sleep(800);
 
       let targets = findTargets();
 
@@ -184,7 +177,7 @@
         continue;
       }
 
-      await sleep(600);
+      await sleep(800);
     }
   }
 
