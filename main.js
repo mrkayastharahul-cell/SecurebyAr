@@ -4,8 +4,13 @@
 
   let running = false;
 
-  const fahhh = new Audio("https://www.myinstants.com/media/sounds/fahh.mp3");
-  const aayeinn = new Audio("https://www.myinstants.com/media/sounds/aayein.mp3");
+  const fahhh = new Audio(
+    "https://www.myinstants.com/media/sounds/fahh.mp3"
+  );
+
+  const aayeinn = new Audio(
+    "https://www.myinstants.com/media/sounds/aayein.mp3"
+  );
 
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
@@ -13,6 +18,14 @@
     return document.body.innerText
       .toLowerCase()
       .includes("select method payment");
+  }
+
+  function clickDefault() {
+    document.querySelectorAll("button, div, span").forEach(el => {
+      if (el.innerText?.toLowerCase().trim() === "default") {
+        el.click();
+      }
+    });
   }
 
   function clickLarge() {
@@ -27,7 +40,9 @@
     let current = startEl;
 
     while (current && current !== document.body) {
-      let btn = current.querySelector("button, .van-button__text");
+      const btn = current.querySelector(
+        "button, .van-button__text"
+      );
 
       if (
         btn &&
@@ -91,20 +106,22 @@
   async function mainLoop(value, indicator) {
     while (running) {
 
-      // Only click Large
+      // Click Default first, then Large
+      clickDefault();
       clickLarge();
 
-      // Small delay after Large
+      // Small delay after both clicks
       await sleep(100 + Math.random() * 80);
 
-      let matches = findMatches(value);
+      const matches = findMatches(value);
+
       highlight(matches);
 
       if (matches.length > 0) {
 
-        for (let row of matches.slice(0, 3)) {
+        for (const row of matches.slice(0, 3)) {
 
-          let buyBtn = findBuyButton(row);
+          const buyBtn = findBuyButton(row);
 
           if (!buyBtn) continue;
 
@@ -159,7 +176,12 @@
       <div style="display:flex;justify-content:space-between;">
         <div>💰 Bot</div>
         <div id="dot"
-          style="width:10px;height:10px;border-radius:50%;background:red;">
+          style="
+            width:10px;
+            height:10px;
+            border-radius:50%;
+            background:red;
+          ">
         </div>
       </div>
 
@@ -214,7 +236,8 @@
       if (running) return;
 
       if (!input.value.trim()) {
-        return alert("Enter amount");
+        alert("Enter amount");
+        return;
       }
 
       running = true;
