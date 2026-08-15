@@ -82,13 +82,13 @@
     });
   }
 
-  function clickAirtelFast() {
+  function clickFreeChargeFast() {
     let tries = 0;
 
     const interval = setInterval(() => {
       const el = [...document.querySelectorAll("button, div, span")]
         .find(e =>
-          e.innerText?.toLowerCase().includes("airtel")
+          e.innerText?.toLowerCase().includes("freecharge")
         );
 
       if (el) {
@@ -113,19 +113,22 @@
       // 1. Click Default
       clickDefault();
 
-      // 2. Immediately click Large
+      // 2. Click Large
       clickLarge();
 
       await sleep(100 + Math.random() * 80);
 
-      // If payment page somehow already appeared
+      // Check whether payment page is already open
       if (onPaymentPage()) {
         fahhh.play();
+
         await sleep(200);
-        clickAirtelFast();
+
+        clickFreeChargeFast();
 
         running = false;
         indicator.style.background = "red";
+
         return;
       }
 
@@ -139,7 +142,7 @@
 
       if (matches.length > 0) {
 
-        // Try up to 3 matching rows
+        // Try the first 3 matching rows
         for (const row of matches.slice(0, 3)) {
 
           if (!running) return;
@@ -165,22 +168,20 @@
 
             await sleep(200);
 
-            clickAirtelFast();
+            // Click FreeCharge
+            clickFreeChargeFast();
 
             running = false;
             indicator.style.background = "red";
 
             return;
           }
-
-          // Payment page NOT detected.
-          // Continue to next matching Buy button.
         }
       }
 
       // ==========================================
-      // PAYMENT PAGE STILL NOT FOUND
-      // START ENTIRE PROCESS AGAIN
+      // PAYMENT PAGE NOT FOUND
+      // RESTART ENTIRE PROCESS
       // ==========================================
 
       if (running && !onPaymentPage()) {
@@ -210,6 +211,7 @@
     ui.innerHTML = `
       <div style="display:flex;justify-content:space-between;">
         <div>💰 Bot</div>
+
         <div id="dot"
           style="
             width:10px;
