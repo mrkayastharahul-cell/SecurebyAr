@@ -106,12 +106,32 @@
   async function mainLoop(value, indicator) {
     while (running) {
 
-      // Click Default first, then Large
+      // ==========================================
+      // NEW CYCLE
+      // ==========================================
+
+      // 1. Click Default
       clickDefault();
+
+      // 2. Immediately click Large
       clickLarge();
 
-      // Small delay after both clicks
       await sleep(100 + Math.random() * 80);
+
+      // If payment page somehow already appeared
+      if (onPaymentPage()) {
+        fahhh.play();
+        await sleep(200);
+        clickAirtelFast();
+
+        running = false;
+        indicator.style.background = "red";
+        return;
+      }
+
+      // ==========================================
+      // FIND TARGET AMOUNT
+      // ==========================================
 
       const matches = findMatches(value);
 
@@ -119,7 +139,10 @@
 
       if (matches.length > 0) {
 
+        // Try up to 3 matching rows
         for (const row of matches.slice(0, 3)) {
+
+          if (!running) return;
 
           const buyBtn = findBuyButton(row);
 
@@ -127,9 +150,14 @@
 
           await sleep(60 + Math.random() * 80);
 
+          // Click Buy
           buyBtn.click();
 
           await sleep(120 + Math.random() * 100);
+
+          // ======================================
+          // PAYMENT PAGE CHECK
+          // ======================================
 
           if (onPaymentPage()) {
 
@@ -137,7 +165,6 @@
 
             await sleep(200);
 
-            // Click Airtel instead of Mobikwik
             clickAirtelFast();
 
             running = false;
@@ -145,12 +172,20 @@
 
             return;
           }
+
+          // Payment page NOT detected.
+          // Continue to next matching Buy button.
         }
+      }
 
-        await sleep(150);
+      // ==========================================
+      // PAYMENT PAGE STILL NOT FOUND
+      // START ENTIRE PROCESS AGAIN
+      // ==========================================
 
-      } else {
+      if (running && !onPaymentPage()) {
         await sleep(150);
+        continue;
       }
     }
   }
