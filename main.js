@@ -20,17 +20,9 @@
       .includes("select method payment");
   }
 
-  function clickDefault() {
+  function clickOTPUPI() {
     document.querySelectorAll("button, div, span").forEach(el => {
-      if (el.innerText?.toLowerCase().trim() === "default") {
-        el.click();
-      }
-    });
-  }
-
-  function clickLarge() {
-    document.querySelectorAll("button, div, span").forEach(el => {
-      if (el.innerText?.toLowerCase().trim() === "large") {
+      if (el.innerText?.toLowerCase().trim() === "otp-upi") {
         el.click();
       }
     });
@@ -57,14 +49,25 @@
     return null;
   }
 
+  // STRICT AMOUNT MATCHING
   function findMatches(value) {
+    const target = Number(
+      String(value).replace(/,/g, "").trim()
+    );
+
+    if (!Number.isFinite(target)) return [];
+
     return [...document.querySelectorAll("[class*=row],[class*=item]")]
       .filter(row => {
-        const text = row.innerText
-          .replace(/\s/g, "")
-          .replace(/,/g, "");
+        const text = row.innerText || "";
 
-        return new RegExp(`₹${value}(?!\\d)`).test(text);
+        const amounts = [...text.matchAll(
+          /₹\s*([\d,]+(?:\.\d+)?)/g
+        )].map(m =>
+          Number(m[1].replace(/,/g, ""))
+        );
+
+        return amounts.some(amount => amount === target);
       });
   }
 
@@ -86,10 +89,11 @@
     let tries = 0;
 
     const interval = setInterval(() => {
-      const el = [...document.querySelectorAll("button, div, span")]
-        .find(e =>
-          e.innerText?.toLowerCase().includes("freecharge")
-        );
+      const el = [...document.querySelectorAll(
+        "button, div, span"
+      )].find(e =>
+        e.innerText?.toLowerCase().trim() === "freecharge"
+      );
 
       if (el) {
         el.click();
@@ -110,30 +114,13 @@
       // NEW CYCLE
       // ==========================================
 
-      // 1. Click Default
-      clickDefault();
-
-      // 2. Click Large
-      clickLarge();
+      // OTP-UPI
+      clickOTPUPI();
 
       await sleep(100 + Math.random() * 80);
 
-      // Check whether payment page is already open
-      if (onPaymentPage()) {
-        fahhh.play();
-
-        await sleep(200);
-
-        clickFreeChargeFast();
-
-        running = false;
-        indicator.style.background = "red";
-
-        return;
-      }
-
       // ==========================================
-      // FIND TARGET AMOUNT
+      // FIND EXACT AMOUNT
       // ==========================================
 
       const matches = findMatches(value);
@@ -142,7 +129,7 @@
 
       if (matches.length > 0) {
 
-        // Try the first 3 matching rows
+        // Try up to 3 exact matches
         for (const row of matches.slice(0, 3)) {
 
           if (!running) return;
@@ -153,7 +140,6 @@
 
           await sleep(60 + Math.random() * 80);
 
-          // Click Buy
           buyBtn.click();
 
           await sleep(120 + Math.random() * 100);
@@ -168,7 +154,6 @@
 
             await sleep(200);
 
-            // Click FreeCharge
             clickFreeChargeFast();
 
             running = false;
